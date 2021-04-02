@@ -187,6 +187,7 @@ extern const FFCodec ff_jv_decoder;
 extern const FFCodec ff_kgv1_decoder;
 extern const FFCodec ff_kmvc_decoder;
 extern const FFCodec ff_lagarith_decoder;
+extern const FFCodec ff_libvvdec_decoder;
 extern const FFCodec ff_ljpeg_encoder;
 extern const FFCodec ff_loco_decoder;
 extern const FFCodec ff_lscr_decoder;
