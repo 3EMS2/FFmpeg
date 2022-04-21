@@ -255,12 +255,12 @@ static av_cold int ff_vvdec_decode_frame( AVCodecContext *avctx, void *data, int
     {
       if( iRet == VVDEC_TRY_AGAIN )
       {
-        VVDEC_LOG_DBG( "vvdec::decode - more input data needed" );
+        VVDEC_LOG_DBG( "vvdec::decode - more input data needed\n" );
       }
       else if( iRet == VVDEC_EOF )
       {
         s->bFlush = true;
-        VVDEC_LOG_VERBOSE( "vvdec::decode - eof reached" );
+        VVDEC_LOG_DBG( "vvdec::decode - eof reached\n" );
       }
       else
       {
@@ -310,42 +310,22 @@ static av_cold int ff_vvdec_decode_frame( AVCodecContext *avctx, void *data, int
             av_log(avctx, AV_LOG_INFO, "dimension change! %dx%d -> %dx%d\n",
                    avctx->width, avctx->height, frame->width, frame->height);
 
-            avctx->coded_width  = frame->width;
-            avctx->coded_height = frame->height;
-            avctx->width        = AV_CEIL_RSHIFT(frame->width,  avctx->lowres);
-            avctx->height       = AV_CEIL_RSHIFT(frame->height, avctx->lowres);
+            iRet = ff_set_dimensions(avctx, frame->width, frame->height);
+            if (iRet < 0)
+                return iRet;
         }
 
-        pcAVFrame->width  = frame->width;
-        pcAVFrame->height = frame->height;
-        pcAVFrame->format = avctx->pix_fmt;
-
-        pcAVFrame->color_trc = avctx->color_trc;
-        pcAVFrame->color_primaries = avctx->color_primaries;
-        pcAVFrame->colorspace = avctx->colorspace;
-
-        pcAVFrame->interlaced_frame = 0;
-        pcAVFrame->top_field_first  = 0;
-        if (frame->ctsValid)
-          pcAVFrame->pts = frame->cts;
-
-        iRet = av_frame_get_buffer( pcAVFrame, 32 );
-        if( iRet < 0 )
-        {
-          av_log(avctx, AV_LOG_ERROR, "Could not allocate the video frame data\n");
-          return iRet;
-        }
-
-        /* make sure the frame data is writable */
-        iRet = av_frame_make_writable( pcAVFrame );
-        if( iRet < 0 )
-        {
-          av_log(avctx, AV_LOG_ERROR, "Could not make frame writable\n");
-          return iRet;
+        // The decoder doesn't support decoding into a user provided buffer yet, so do a copy
+        if (ff_get_buffer(avctx, pcAVFrame, 0) < 0) {
+            av_log(avctx, AV_LOG_ERROR, "Could not allocate the video frame data\n");
+            return AVERROR(ENOMEM);
         }
 
         av_image_copy(pcAVFrame->data, pcAVFrame->linesize, src_data,
                       src_linesizes, avctx->pix_fmt, frame->width, frame->height );
+        
+        pcAVFrame->pts     = frame->ctsValid ? frame->cts : AV_NOPTS_VALUE;
+        pcAVFrame->pkt_dts = AV_NOPTS_VALUE;
 
         if( 0 != vvdec_frame_unref( s->vvdecDec, frame ) )
         {
@@ -360,6 +340,25 @@ static av_cold int ff_vvdec_decode_frame( AVCodecContext *avctx, void *data, int
   return avpkt->size;
 }
 
+static av_cold void ff_vvdec_decode_flush(AVCodecContext *avctx)
+{
+  VVdeCContext *s = (VVdeCContext*)avctx->priv_data;
+
+  if( 0 != vvdec_decoder_close(s->vvdecDec) )
+  {
+    av_log(avctx, AV_LOG_ERROR, "cannot close vvdec during flush\n" );
+  }
+
+  s->vvdecDec = vvdec_decoder_open( &s->vvdecParams );
+  if( !s->vvdecDec )
+  {
+    av_log(avctx, AV_LOG_ERROR, "cannot reinit vvdec during flush\n" );
+  }
+
+  vvdec_set_logging_callback( s->vvdecDec, ff_vvdec_log_callback );
+
+  s->bFlush = false;
+}
 
 static const enum AVPixelFormat pix_fmts_vvc[] = {
     AV_PIX_FMT_YUV420P,
@@ -378,7 +377,7 @@ static const AVOption libvvdec_options[] = {
 };
 
 static const AVClass libvvdec_class = {
-    "VVC decoder",
+    "libvvdec-vvc decoder",
     av_default_item_name,
     libvvdec_options,
     LIBAVUTIL_VERSION_INT,
