@@ -1,19 +1,24 @@
-/**
-  \ingroup avcodec
-  \file    libvvdec.cpp
-  \brief   This file contains the implementation of the hhi vvc VVdeC plugin.
-  \author  christian.lehmann@hhi.fraunhofer.de
-  \date    March/20/2021
-
-  Copyright:
-  2021 Fraunhofer Institute for Telecommunications, Heinrich-Hertz-Institut (HHI)
-  The copyright of this software source code is the property of HHI.
-  This software may be used and/or copied only with the written permission
-  of HHI and in accordance with the terms and conditions stipulated
-  in the agreement/contract under which the software has been supplied.
-  The software distributed under this license is distributed on an "AS IS" basis,
-  WITHOUT WARRANTY OF ANY KIND, either expressed or implied.
-*/
+/*
+ * H.266 decoding using the VVdeC library
+ *
+ * Copyright (c) 2018-2022, Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
 #include <stdio.h>
 #include <stdint.h>
