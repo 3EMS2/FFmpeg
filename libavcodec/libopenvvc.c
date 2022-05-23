@@ -65,11 +65,25 @@ static const AVClass libovvc_decoder_class = {
     .category   = AV_CLASS_CATEGORY_DECODER,
 };
 
+static void release_nalu(struct OVNALUnit **nalu_p)
+{
+    OVNALUnit *ovnalu = *nalu_p;
+    if (ovnalu->rbsp_data) {
+        av_freep(&ovnalu->rbsp_data);
+    }
+
+    if (ovnalu->epb_pos) {
+        av_freep(&ovnalu->epb_pos);
+    }
+    av_freep(nalu_p);
+    //*nalu_p = NULL;
+}
+
 static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int raw_size, const int *skipped_bytes_pos, int skipped_bytes) {
 
 
     OVNALUnit *ovnalu;
-    int ret = ovnalu_init2(&ovnalu);
+    int ret = ovnalu_create(&ovnalu);
     if (ret < 0) {
 	av_log(NULL, AV_LOG_ERROR, "Could not init new OVNALUnit\n");
 	return ret;
@@ -99,13 +113,14 @@ static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int 
 		    ovnalu->epb_pos = epb_cpy;
 		    ovnalu->nb_epb = skipped_bytes;
 		} else {
-		    ov_nalu_unref(&ovnalu);
+		    ovnalu_unref(&ovnalu);
 		    av_freep(rbsp_cpy);
 		    ret = AVERROR(ENOMEM);
 		}
 	    }
+            ovnalu->release = release_nalu;
 	} else {
-            ov_nalu_unref(&ovnalu);
+            ovnalu_unref(&ovnalu);
 	     ret = AVERROR(ENOMEM);
 	}
     }
@@ -113,17 +128,6 @@ static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int 
     *ovnalu_p = ovnalu;
 
     return ret;
-}
-
-static void unref_pu_ovnalus(OVPictureUnit **ovpu_p) {
-    int i;
-    OVPictureUnit *ovpu = *ovpu_p;
-    for (i = 0; i < ovpu->nb_nalus; ++i) {
-         OVNALUnit **ovnalu_p = &ovpu->nalus[i];
-         ov_nalu_unref(ovnalu_p);
-    }
-
-    av_freep(&ovpu->nalus);
 }
 
 static int convert_avpkt(OVPictureUnit **ovpu_p, const H2645Packet *pkt) {
@@ -140,11 +144,11 @@ static int convert_avpkt(OVPictureUnit **ovpu_p, const H2645Packet *pkt) {
     for (i = 0; i < ovpu->nb_nalus; ++i) {
          const H2645NAL *avnalu = &pkt->nals[i];
          OVNALUnit **ovnalu_p = &ovpu->nalus[i];
-         copy_rpbs_info(ovnalu_p, avnalu->data, avnalu->raw_size, avnalu->skipped_bytes_pos, avnalu->skipped_bytes);
+         int rbsp_size = avnalu->size_bits + 8 >> 3;
+
+         copy_rpbs_info(ovnalu_p, avnalu->data, rbsp_size, avnalu->skipped_bytes_pos, avnalu->skipped_bytes);
          (*ovnalu_p)->type = avnalu->type;
     }
-
-    ovpu->release = unref_pu_ovnalus;
 
     return 0;
 }
@@ -213,7 +217,10 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
             export_frame_properties(outdata, c);
 
             *outdata_size = 1;
-        }
+        } else {
+ 
+            av_log(c, AV_LOG_WARNING, "No pic to drain");
+	}
 
         return 0;
     }
@@ -238,8 +245,8 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
 
     ret = ovdec_submit_picture_unit(libovvc_dec, ovpu);
     if (ret < 0) {
+        av_log(c, AV_LOG_ERROR, "Error submitting picture unit\n");
         ovpu_unref(&ovpu);
-
         return AVERROR_INVALIDDATA;
     }
 
@@ -333,11 +340,11 @@ static av_cold int libovvc_decode_free(AVCodecContext *c) {
 static av_cold void libovvc_decode_flush(AVCodecContext *c) {
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
     OVVCDec *libovvc_dec = dec_ctx->libovvc_dec;
-
+#if 0
     OVFrame *ovframe = NULL;
     int ret;
 
-    av_log(c, AV_LOG_VERBOSE, "Flushing.\n");
+    av_log(c, AV_LOG_ERROR, "Flushing.\n");
 
     do {
         ret = ovdec_drain_picture(libovvc_dec, &ovframe);
@@ -355,6 +362,10 @@ static av_cold void libovvc_decode_flush(AVCodecContext *c) {
     if (ret < 0) {
         dec_ctx->libovvc_dec = NULL;
     }
+#else
+    av_log(c, AV_LOG_ERROR, "Flushing.\n");
+    ovdec_flush(libovvc_dec);
+#endif
 
     return;
 }
