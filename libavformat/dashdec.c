@@ -1771,7 +1771,7 @@ static int read_data(void *opaque, uint8_t *buf, int buf_size)
     int ret = 0;
     struct representation *v = opaque;
     DASHContext *c = v->parent->priv_data;
-
+    
 restart:
     if (!v->input) {
         free_fragment(&v->cur_seg);
@@ -1787,13 +1787,22 @@ restart:
             goto end;
 
         ret = open_input(c, v, v->cur_seg);
+
         if (ret < 0) {
             if (ff_check_interrupt(c->interrupt_callback)) {
                 ret = AVERROR_EXIT;
                 goto end;
             }
             av_log(v->parent, AV_LOG_WARNING, "Failed to open fragment of playlist\n");
-            v->cur_seq_no++;
+            
+            if (!c->is_live) {
+                v->cur_seq_no++;
+            } else {
+            	int max_seq_no = calc_max_seg_no(v, c);
+            	if (max_seq_no > v->cur_seq_no)
+            		v->cur_seq_no++;
+            }
+            
             goto restart;
         }
     }
@@ -1819,9 +1828,17 @@ restart:
     if (ret > 0)
         goto end;
 
-    if (c->is_live || v->cur_seq_no < v->last_seq_no) {
+    if (v->cur_seq_no < v->last_seq_no) {
         if (!v->is_restart_needed)
             v->cur_seq_no++;
+        v->is_restart_needed = 1;
+    } else if (c->is_live) {
+        if (!v->is_restart_needed) {
+        	while (v->cur_seq_no == calc_max_seg_no(v, c)) {
+        		av_usleep(50000); 
+        	}
+                v->cur_seq_no++;
+        }
         v->is_restart_needed = 1;
     }
 
