@@ -131,20 +131,22 @@ static int convert_avpkt(OVPictureUnit *ovpu, const H2645Packet *pkt) {
          (*ovnalu_p)->type = avnalu->type;
     }
 
+    ovpu->release = unref_pu_ovnalus;
+
     return 0;
 }
 
-static int unref_pu_ovnalus(OVPictureUnit *ovpu) {
+static void unref_pu_ovnalus(OVPictureUnit *ovpu_p) {
     int i;
+    OVPictureUnit *ovpu = *ovpu_p;
     for (i = 0; i < ovpu->nb_nalus; ++i) {
          OVNALUnit **ovnalu_p = &ovpu->nalus[i];
          ov_nalu_unref(ovnalu_p);
     }
 
     av_freep(&ovpu->nalus);
-
-    return 0;
 }
+
 
 static void unref_ovframe(void *opaque, uint8_t *data) {
 
