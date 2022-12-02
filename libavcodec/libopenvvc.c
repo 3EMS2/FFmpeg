@@ -228,7 +228,11 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
         return ret;
     }
 
-    convert_avpkt(&ovpu, &pkt);
+    ret = convert_avpkt(&ovpu, &pkt);
+    if (ret < 0) {
+        av_log(c, AV_LOG_ERROR, "Fail to convert AVPacket to OVPictureUnit\n");
+    }
+
     ret = ovdec_submit_picture_unit(libovvc_dec, &ovpu);
     if (ret < 0) {
         unref_pu_ovnalus(&ovpu);
