@@ -67,38 +67,52 @@ static const AVClass libovvc_decoder_class = {
 
 static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int raw_size, const int *skipped_bytes_pos, int skipped_bytes) {
 
-    uint8_t *rbsp_cpy = av_malloc(raw_size + 8);
-    OVNALUnit *ovnalu = av_mallocz(sizeof(OVNALUnit));
-    if (!ovnalu) {
-        return AVERROR(ENOMEM);
-    }
-    ov_nalu_init(ovnalu);
 
-    /* TODO check allocs */
-    memcpy(rbsp_cpy, rbsp_buffer, raw_size);
-    rbsp_cpy[raw_size]     = 0;
-    rbsp_cpy[raw_size + 1] = 0;
-    rbsp_cpy[raw_size + 2] = 0;
-    rbsp_cpy[raw_size + 3] = 0;
-    rbsp_cpy[raw_size + 4] = 0;
-    rbsp_cpy[raw_size + 5] = 0;
-    rbsp_cpy[raw_size + 6] = 0;
-    rbsp_cpy[raw_size + 7] = 0;
+    OVNALUnit *ovnalu;
+    int ret = ovnalu_init2(&ovnalu);
+    if (ret < 0) {
+	av_log(NULL, AV_LOG_ERROR, "Could not init new OVNALUnit\n");
+	return ret;
+    } else {
+	uint8_t *rbsp_cpy = av_malloc(raw_size + 8);
+	if (rbsp_cpy) {
 
-    ovnalu->rbsp_data = rbsp_cpy;
-    ovnalu->rbsp_size = raw_size;
+	    memcpy(rbsp_cpy, rbsp_buffer, raw_size);
+	    rbsp_cpy[raw_size]     = 0;
+	    rbsp_cpy[raw_size + 1] = 0;
+	    rbsp_cpy[raw_size + 2] = 0;
+	    rbsp_cpy[raw_size + 3] = 0;
+	    rbsp_cpy[raw_size + 4] = 0;
+	    rbsp_cpy[raw_size + 5] = 0;
+	    rbsp_cpy[raw_size + 6] = 0;
+	    rbsp_cpy[raw_size + 7] = 0;
 
-    if (skipped_bytes) {
-        int *epb_cpy = av_malloc(skipped_bytes * sizeof (*ovnalu->epb_pos));
-        memcpy(epb_cpy, skipped_bytes_pos, skipped_bytes * sizeof (*ovnalu->epb_pos));
+	    ovnalu->rbsp_data = rbsp_cpy;
+	    ovnalu->rbsp_size = raw_size;
 
-        ovnalu->epb_pos = epb_cpy;
-        ovnalu->nb_epb = skipped_bytes;
+	    if (skipped_bytes) {
+		int *epb_cpy = av_malloc(skipped_bytes * sizeof (*ovnalu->epb_pos));
+		if (epb_cpy) {
+
+		    memcpy(epb_cpy, skipped_bytes_pos, skipped_bytes * sizeof (*ovnalu->epb_pos));
+
+		    ovnalu->epb_pos = epb_cpy;
+		    ovnalu->nb_epb = skipped_bytes;
+		} else {
+		    ov_nalu_unref(&ovnalu);
+		    av_freep(rbsp_cpy);
+		    ret = AVERROR(ENOMEM);
+		}
+	    }
+	} else {
+            ov_nalu_unref(&ovnalu);
+	     ret = AVERROR(ENOMEM);
+	}
     }
 
     *ovnalu_p = ovnalu;
 
-    return 0;
+    return ret;
 }
 
 static int convert_avpkt(OVPictureUnit *ovpu, const H2645Packet *pkt) {
