@@ -182,8 +182,10 @@ static void
 export_frame_properties(const AVFrame *const avframe, AVCodecContext *c)
 {
     c->pix_fmt = avframe->pict_type;
+
     c->width   = avframe->width;
     c->height  = avframe->height;
+
     c->coded_width   = avframe->width;
     c->coded_height  = avframe->height;
 }
