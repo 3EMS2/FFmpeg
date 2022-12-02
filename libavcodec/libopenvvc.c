@@ -187,7 +187,7 @@ export_frame_properties(const AVFrame *const avframe, AVCodecContext *c)
     c->coded_height  = avframe->height;
 }
 
-static int libovvc_decode_frame(AVCodecContext *c, void *outdata, int *outdata_size, AVPacket *avpkt) {
+static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdata, int *outdata_size, struct AVPacket *avpkt) {
 
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
     OVVCDec *libovvc_dec = dec_ctx->libovvc_dec;
