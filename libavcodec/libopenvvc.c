@@ -115,6 +115,17 @@ static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int 
     return ret;
 }
 
+static void unref_pu_ovnalus(OVPictureUnit **ovpu_p) {
+    int i;
+    OVPictureUnit *ovpu = *ovpu_p;
+    for (i = 0; i < ovpu->nb_nalus; ++i) {
+         OVNALUnit **ovnalu_p = &ovpu->nalus[i];
+         ov_nalu_unref(ovnalu_p);
+    }
+
+    av_freep(&ovpu->nalus);
+}
+
 static int convert_avpkt(OVPictureUnit **ovpu_p, const H2645Packet *pkt) {
 
     int ret = ovpu_init(ovpu_p, pkt->nb_nals);
@@ -137,18 +148,6 @@ static int convert_avpkt(OVPictureUnit **ovpu_p, const H2645Packet *pkt) {
 
     return 0;
 }
-
-static void unref_pu_ovnalus(OVPictureUnit **ovpu_p) {
-    int i;
-    OVPictureUnit *ovpu = *ovpu_p;
-    for (i = 0; i < ovpu->nb_nalus; ++i) {
-         OVNALUnit **ovnalu_p = &ovpu->nalus[i];
-         ov_nalu_unref(ovnalu_p);
-    }
-
-    av_freep(&ovpu->nalus);
-}
-
 
 static void unref_ovframe(void *opaque, uint8_t *data) {
 
