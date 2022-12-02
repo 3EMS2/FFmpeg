@@ -115,11 +115,13 @@ static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int 
     return ret;
 }
 
-static int convert_avpkt(OVPictureUnit *ovpu, const H2645Packet *pkt) {
+static int convert_avpkt(OVPictureUnit **ovpu_p, const H2645Packet *pkt) {
+
+    int ret = ovpu_init(ovpu_p, pkt->nb_nals);
+    OVPictureUnit *ovpu = *ovpu_p;
     int i;
-    ovpu->nb_nalus = pkt->nb_nals;
-    ovpu->nalus = av_malloc(sizeof(*ovpu->nalus) * ovpu->nb_nalus);
-    if (!ovpu->nb_nalus) {
+
+    if (ret < 0) {
         av_log(NULL, AV_LOG_ERROR, "No NAL Unit in packet.\n");
         return AVERROR(ENOMEM);
     }
@@ -136,7 +138,7 @@ static int convert_avpkt(OVPictureUnit *ovpu, const H2645Packet *pkt) {
     return 0;
 }
 
-static void unref_pu_ovnalus(OVPictureUnit *ovpu_p) {
+static void unref_pu_ovnalus(OVPictureUnit **ovpu_p) {
     int i;
     OVPictureUnit *ovpu = *ovpu_p;
     for (i = 0; i < ovpu->nb_nalus; ++i) {
@@ -192,7 +194,7 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
     OVVCDec *libovvc_dec = dec_ctx->libovvc_dec;
     OVFrame *ovframe = NULL;
-    OVPictureUnit ovpu;
+    OVPictureUnit *ovpu;
     H2645Packet pkt = {0};
 
     int *nb_pic_out = outdata_size;
@@ -233,9 +235,9 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
         av_log(c, AV_LOG_ERROR, "Fail to convert AVPacket to OVPictureUnit\n");
     }
 
-    ret = ovdec_submit_picture_unit(libovvc_dec, &ovpu);
+    ret = ovdec_submit_picture_unit(libovvc_dec, ovpu);
     if (ret < 0) {
-        unref_pu_ovnalus(&ovpu);
+        ovpu_unref(&ovpu);
 
         return AVERROR_INVALIDDATA;
     }
@@ -253,7 +255,7 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
         *nb_pic_out = 1;
     }
 
-    unref_pu_ovnalus(&ovpu);
+    ovpu_unref(&ovpu);
 
     ff_h2645_packet_uninit(&pkt);
 
