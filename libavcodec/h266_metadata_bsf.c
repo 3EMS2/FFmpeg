@@ -134,12 +134,12 @@ static const enum AVCodecID vvc_metadata_codec_ids[] = {
     AV_CODEC_ID_VVC, AV_CODEC_ID_NONE,
 };
 
-const AVBitStreamFilter ff_vvc_metadata_bsf = {
-    .name           = "vvc_metadata",
+const FFBitStreamFilter ff_vvc_metadata_bsf = {
+    .p.name           = "vvc_metadata",
+    .p.codec_ids      = vvc_metadata_codec_ids,
+    .p.priv_class     = &vvc_metadata_class,
     .priv_data_size = sizeof(VVCMetadataContext),
-    .priv_class     = &vvc_metadata_class,
     .init           = &vvc_metadata_init,
     .close          = &ff_cbs_bsf_generic_close,
     .filter         = &ff_cbs_bsf_generic_filter,
-    .codec_ids      = vvc_metadata_codec_ids,
 };

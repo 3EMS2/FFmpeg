@@ -309,10 +309,10 @@ static const enum AVCodecID codec_ids[] = {
     AV_CODEC_ID_VVC, AV_CODEC_ID_NONE,
 };
 
-const AVBitStreamFilter ff_vvc_mp4toannexb_bsf = {
-    .name           = "vvc_mp4toannexb",
+const FFBitStreamFilter ff_vvc_mp4toannexb_bsf = {
+    .p.name           = "vvc_mp4toannexb",
+    .p.codec_ids      = codec_ids,
     .priv_data_size = sizeof(VVCBSFContext),
     .init           = vvc_mp4toannexb_init,
     .filter         = vvc_mp4toannexb_filter,
-    .codec_ids      = codec_ids,
 };

@@ -29,6 +29,7 @@
 #include "libavutil/opt.h"
 
 #include "avcodec.h"
+#include "codec_internal.h"
 #include "profiles.h"
 #include "h2645_parse.h"
 #include "vvc.h"
@@ -335,22 +336,22 @@ static av_cold void libovvc_decode_flush(AVCodecContext *c) {
     return;
 }
 
-const AVCodec ff_libopenvvc_decoder = {
-    .name                  = "ovvc",
-    .long_name             = NULL_IF_CONFIG_SMALL("Open VVC(Versatile Video Coding)"),
-    .type                  = AVMEDIA_TYPE_VIDEO,
-    .id                    = AV_CODEC_ID_VVC,
+const FFCodec ff_libopenvvc_decoder = {
+    .p.name                  = "ovvc",
+    CODEC_LONG_NAME("Open VVC(Versatile Video Coding)"),
+    .p.type                  = AVMEDIA_TYPE_VIDEO,
+    .p.id                    = AV_CODEC_ID_VVC,
     .priv_data_size        = sizeof(struct OVDecContext),
-    .priv_class            = &libovvc_decoder_class,
+    .p.priv_class            = &libovvc_decoder_class,
     .init                  = libovvc_decode_init,
     .close                 = libovvc_decode_free,
-    .decode                = libovvc_decode_frame,
+    FF_CODEC_DECODE_CB(libovvc_decode_frame),
     .flush                 = libovvc_decode_flush,
-    .capabilities          = AV_CODEC_CAP_DELAY | AV_CODEC_CAP_OTHER_THREADS,
+    .p.capabilities          = AV_CODEC_CAP_DELAY | AV_CODEC_CAP_OTHER_THREADS,
     .bsfs                  = "vvc_mp4toannexb",
-    .wrapper_name          = "OpenVVC",
+    .p.wrapper_name          = "OpenVVC",
 #if 0
     .caps_internal         = FF_CODEC_CAP_INIT_THREADSAFE | FF_CODEC_CAP_EXPORTS_CROPPING,
 #endif
-    .profiles              = NULL_IF_CONFIG_SMALL(ff_vvc_profiles),
+    .p.profiles              = NULL_IF_CONFIG_SMALL(ff_vvc_profiles),
 };

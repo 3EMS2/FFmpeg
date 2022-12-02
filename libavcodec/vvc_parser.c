@@ -229,7 +229,7 @@ static int set_parser_ctx(AVCodecParserContext *ctx, AVCodecContext *avctx,
     avctx->color_range = sps->vui.vui_full_range_flag ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
 
     if (ctx->width != avctx->width || ctx->height != avctx->height) {
-        ret = ff_set_dimensions(avctx, ctx->width, ctx->height);
+        //ret = ff_set_dimensions(avctx, ctx->width, ctx->height);
         if (ret < 0)
             return ret;
     }
