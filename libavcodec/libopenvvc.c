@@ -340,32 +340,10 @@ static av_cold int libovvc_decode_free(AVCodecContext *c) {
 static av_cold void libovvc_decode_flush(AVCodecContext *c) {
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
     OVVCDec *libovvc_dec = dec_ctx->libovvc_dec;
-#if 0
-    OVFrame *ovframe = NULL;
-    int ret;
 
-    av_log(c, AV_LOG_ERROR, "Flushing.\n");
+    av_log(c, AV_LOG_TRACE, "Flushing.\n");
 
-    do {
-        ret = ovdec_drain_picture(libovvc_dec, &ovframe);
-
-        if (ovframe) {
-            av_log(c, AV_LOG_TRACE, "Flushing pic with POC: %d\n", ovframe->poc);
-            ovframe_unref(&ovframe);
-        }
-    } while (ret > 0);
-
-    /* Draining in Open VVC forces us to close and reopen the decoder */
-    libovvc_decode_free(c);
-
-    ret = libovvc_decode_init(c);
-    if (ret < 0) {
-        dec_ctx->libovvc_dec = NULL;
-    }
-#else
-    av_log(c, AV_LOG_ERROR, "Flushing.\n");
     ovdec_flush(libovvc_dec);
-#endif
 
     return;
 }
