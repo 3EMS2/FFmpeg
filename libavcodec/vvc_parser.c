@@ -107,24 +107,29 @@ static int find_frame_end(AVCodecParserContext *s, const uint8_t *buf,
             continue;
 
         nut = (pc->state64 >> (8 + 3)) & 0x1F;
+        int ph_in_slice = IS_SLICE(nut) && (buf[i] >> 7);
+        static count = 0;
+        if (ph_in_slice)
+            av_log(NULL, AV_LOG_ERROR, "PH_INSLICE %d\n", count);
+        count++;
         // 7.4.2.4.3 and 7.4.2.4.4
-        if ((nut >= VVC_OPI_NUT && nut <= VVC_PREFIX_APS_NUT && nut != VVC_PH_NUT) ||
-            nut == VVC_AUD_NUT || (nut == VVC_PREFIX_SEI_NUT && !pc->frame_start_found) || nut == VVC_RSV_NVCL_26 ||
+        if (ph_in_slice || (nut >= VVC_OPI_NUT && nut <= VVC_PREFIX_APS_NUT) || nut == VVC_PH_NUT ||
+            nut == VVC_AUD_NUT || nut == VVC_PREFIX_SEI_NUT || nut == VVC_RSV_NVCL_26 ||
             nut == VVC_UNSPEC_28 || nut == VVC_UNSPEC_29) {
             if (pc->frame_start_found) {
                 pc->frame_start_found = 0;
                 return i - 5;
-            }
-        } else if (nut == VVC_PH_NUT  || IS_SLICE(nut)) {
-            int sh_picture_header_in_slice_header_flag = buf[i] >> 7;
-
-            if (nut == VVC_PH_NUT || sh_picture_header_in_slice_header_flag) {
+            } else if (ph_in_slice) {
                 if (!pc->frame_start_found) {
                     pc->frame_start_found = 1;
-                } else { // First slice of next frame found
-                    pc->frame_start_found = 0;
-                    return i - 5;
+                } else {
+                pc->frame_start_found = 0;
+                return i - 5;
                 }
+            }
+        } else if (IS_SLICE(nut)) {
+            if (!pc->frame_start_found) {
+                pc->frame_start_found = 1;
             }
         }
     }
@@ -541,6 +546,8 @@ static const CodedBitstreamUnitType decompose_unit_types[] = {
     VVC_PPS_NUT,
     VVC_PH_NUT,
     VVC_AUD_NUT,
+    VVC_PREFIX_APS_NUT,
+    VVC_PREFIX_SEI_NUT,
 };
 
 static av_cold int vvc_parser_init(AVCodecParserContext *ctx)

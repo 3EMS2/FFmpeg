@@ -24,6 +24,7 @@
 #include <ovdefs.h>
 #include <ovunits.h>
 #include <ovframe.h>
+#include <ovlog.h>
 
 #include "libavutil/attributes.h"
 #include "libavutil/opt.h"
@@ -42,6 +43,7 @@ struct OVDecContext{
      int64_t log_level;
      int64_t nb_entry_th;
      int64_t nb_frame_th;
+     int64_t brightness;
 };
 
 #define OFFSET(x) offsetof(struct OVDecContext, x)
@@ -53,7 +55,23 @@ static const AVOption options[] = {
     { "threads_tile", "Number of threads to be used on entries", OFFSET(nb_entry_th),
         AV_OPT_TYPE_INT, {.i64 = 0}, 0, 16, PAR },
     { "log_level", "Verbosity of OpenVVC decoder", OFFSET(log_level),
-        AV_OPT_TYPE_INT, {.i64 = 1}, 0, 5, PAR },
+        AV_OPT_TYPE_INT, {.i64 = 1}, 0, 6, PAR , "ll"},
+    { "error", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 1}, 0, 6, PAR , "ll"},
+    { "warning", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 2}, 0, 6, PAR , "ll"},
+    { "info", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 3}, 0, 6, PAR , "ll"},
+    { "verbose", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 4}, 0, 6, PAR , "ll"},
+    { "trace", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 5}, 0, 6, PAR , "ll"},
+    { "debug", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 6}, 0, 6, PAR , "ll"},
+    { "none", "Verbosity of OpenVVC decoder", 0,
+        AV_OPT_TYPE_CONST, {.i64 = 5}, 0, 6, PAR , "ll"},
+    { "brightness", "Verbosity of OpenVVC decoder", OFFSET(brightness),
+        AV_OPT_TYPE_INT, {.i64 = 100}, 100, 10000, PAR },
     { NULL },
 };
 
@@ -63,6 +81,7 @@ static const AVClass libovvc_decoder_class = {
     .option     = options,
     .version    = LIBAVUTIL_VERSION_INT,
     .category   = AV_CLASS_CATEGORY_DECODER,
+    //.log_level_offset_offset = offsetof(AVCodecContext, log_level_offset),
 };
 
 static void release_nalu(struct OVNALUnit **nalu_p)
@@ -295,6 +314,8 @@ static av_cold int libovvc_decode_init(AVCodecContext *c) {
     if (!dec_ctx->libovvc_dec) {
 
         set_libovvc_log_level(dec_ctx->log_level);
+	c->log_level_offset =3;
+        ovlog_set_log_level(dec_ctx->log_level);
 
         ovdec_set_log_callback(libovvc_log);
 

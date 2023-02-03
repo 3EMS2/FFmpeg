@@ -1840,6 +1840,8 @@ restart:
                 v->cur_seq_no++;
         }
         v->is_restart_needed = 1;
+    } else {
+        ret = AVERROR_EOF;
     }
 
 end:

@@ -304,7 +304,31 @@ typedef struct VideoState {
     int last_video_stream, last_audio_stream, last_subtitle_stream;
 
     SDL_cond *continue_read_thread;
+    int brightness;
 } VideoState;
+
+#include "ovdec.h"
+struct OVDecContext{
+     AVClass *c;
+     OVDec* libovvc_dec;
+     int nal_length_size;
+     int is_nalff;
+     int64_t log_level;
+     int64_t nb_entry_th;
+     int64_t nb_frame_th;
+};
+
+static void
+ovvc_set_brigthness(Decoder *vd, int value) {
+	AVCodec *ovvc =   avcodec_find_decoder_by_name("ovvc");
+   if (vd->avctx->codec == ovvc) {
+	   struct OVDecContext *lovdec = vd->avctx->priv_data;
+
+        ovdec_set_option(lovdec->libovvc_dec, OVDEC_BRIGHTNESS, value);
+
+	   printf("OPENVVC\n");
+   }
+}
 
 /* options specified by the user */
 static const AVInputFormat *file_iformat;
@@ -1341,6 +1365,7 @@ static int video_open(VideoState *is)
 
     is->width  = w;
     is->height = h;
+    is->brightness = 100;
 
     return 0;
 }
@@ -3289,6 +3314,20 @@ static void event_loop(VideoState *cur_stream)
             if (!cur_stream->width)
                 continue;
             switch (event.key.keysym.sym) {
+
+            case SDLK_b:
+                cur_stream->brightness += 70;
+                if (cur_stream->brightness > 1000) cur_stream->brightness = 1000;
+                printf("brightness %d\n", cur_stream->brightness);
+		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
+                break;
+            case SDLK_n:
+                cur_stream->brightness -= 70;
+                if (cur_stream->brightness < 100) cur_stream->brightness = 100;
+                printf("brightness %d\n", cur_stream->brightness);
+		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
+                break;
+
             case SDLK_f:
                 toggle_full_screen(cur_stream);
                 cur_stream->force_refresh = 1;
