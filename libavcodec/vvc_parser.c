@@ -110,7 +110,7 @@ static int find_frame_end(AVCodecParserContext *s, const uint8_t *buf,
         int ph_in_slice = IS_SLICE(nut) && (buf[i] >> 7);
         static count = 0;
         if (ph_in_slice)
-            av_log(NULL, AV_LOG_ERROR, "PH_INSLICE %d\n", count);
+            av_log(NULL, AV_LOG_TRACE, "PH_INSLICE %d\n", count);
         count++;
         // 7.4.2.4.3 and 7.4.2.4.4
         if (ph_in_slice || (nut >= VVC_OPI_NUT && nut <= VVC_PREFIX_APS_NUT) || nut == VVC_PH_NUT ||

@@ -324,9 +324,9 @@ ovvc_set_brigthness(Decoder *vd, int value) {
    if (vd->avctx->codec == ovvc) {
 	   struct OVDecContext *lovdec = vd->avctx->priv_data;
 
-        ovdec_set_option(lovdec->libovvc_dec, OVDEC_BRIGHTNESS, value);
+        av_opt_set_int(vd->avctx, "brightness", value, AV_OPT_SEARCH_CHILDREN);
 
-	   printf("OPENVVC\n");
+//	   printf("OPENVVC\n");
    }
 }
 
@@ -3317,14 +3317,14 @@ static void event_loop(VideoState *cur_stream)
 
             case SDLK_b:
                 cur_stream->brightness += 70;
-                if (cur_stream->brightness > 1000) cur_stream->brightness = 1000;
-                printf("brightness %d\n", cur_stream->brightness);
+                if (cur_stream->brightness > 10000) cur_stream->brightness = 1000;
+                //printf("brightness %d\n", cur_stream->brightness);
 		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
                 break;
             case SDLK_n:
                 cur_stream->brightness -= 70;
                 if (cur_stream->brightness < 100) cur_stream->brightness = 100;
-                printf("brightness %d\n", cur_stream->brightness);
+                //printf("brightness %d\n", cur_stream->brightness);
 		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
                 break;
 
