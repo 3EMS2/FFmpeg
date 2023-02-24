@@ -30,7 +30,6 @@
 
 #define CTB_SIZE_Y 128
 
-typedef unsigned __int128 uint128_t;
 
 typedef struct VVCCNALUnitArray {
     uint8_t  array_completeness;
@@ -76,7 +75,8 @@ typedef struct VVCCProfileTierLevel {
     uint8_t  ptl_multilayer_enabled_flag;
 // general_constraint_info
     uint8_t   gci_present_flag;
-    uint128_t gci_general_constraints;
+    uint64_t gci_general_constraints0;
+    uint64_t gci_general_constraints1;
     uint8_t   gci_num_reserved_bits;
 // end general_constraint_info
     uint8_t  *ptl_sublayer_level_present_flag;
@@ -136,7 +136,7 @@ static void vvcc_update_ptl(VVCDecoderConfigurationRecord *vvcc,
       vvcc->num_bytes_constraint_info = 10 + ceil(ptl->gci_num_reserved_bits / 8.);
       vvcc->general_constraint_info = (uint8_t *) malloc(sizeof(uint8_t));
       *vvcc->general_constraint_info = ptl->gci_present_flag;
-      *vvcc->general_constraint_info = *vvcc->general_constraint_info << 71 | ptl->gci_general_constraints;
+      *vvcc->general_constraint_info = *vvcc->general_constraint_info << 71 | (ptl->gci_general_constraints0 << (71 - 64)) | ptl->gci_general_constraints1;
       *vvcc->general_constraint_info = *vvcc->general_constraint_info << 8  | ptl->gci_num_reserved_bits;
       *vvcc->general_constraint_info = *vvcc->general_constraint_info << (int)(8*ceil(ptl->gci_num_reserved_bits / 8.));
     } else {
@@ -190,7 +190,8 @@ static void vvcc_parse_ptl(GetBitContext *gb,
     if(profileTierPresentFlag) {
       general_ptl.gci_present_flag = get_bits1(gb);
       if(general_ptl.gci_present_flag) {
-	  general_ptl.gci_general_constraints = get_bits_long(gb, 71);
+	  general_ptl.gci_general_constraints0 = get_bits_long(gb, 64);
+	  general_ptl.gci_general_constraints1 = get_bits_long(gb, 71 - 64);
 	  general_ptl.gci_num_reserved_bits = get_bits(gb, 8);
 	  skip_bits(gb, general_ptl.gci_num_reserved_bits);
 	}
