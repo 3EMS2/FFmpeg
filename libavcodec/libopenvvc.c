@@ -249,7 +249,7 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
             *outdata_size = 1;
         } else {
  
-            av_log(c, AV_LOG_WARNING, "No pic to drain");
+            av_log(c, AV_LOG_TRACE, "No pic to drain");
 	}
 
         return 0;
@@ -362,7 +362,7 @@ static av_cold int libovvc_decode_free(AVCodecContext *c) {
 
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
 
-    av_log(c, AV_LOG_ERROR, "Closing\n");
+    av_log(c, AV_LOG_TRACE, "Closing\n");
 
     ovdec_close(dec_ctx->libovvc_dec);
 
@@ -375,7 +375,7 @@ static av_cold void libovvc_decode_flush(AVCodecContext *c) {
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
     OVDec *libovvc_dec = dec_ctx->libovvc_dec;
 
-    av_log(c, AV_LOG_ERROR, "Flushing.\n");
+    av_log(c, AV_LOG_TRACE, "Flushing.\n");
 
     ovdec_flush(libovvc_dec);
 
