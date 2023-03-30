@@ -3319,7 +3319,7 @@ static void event_loop(VideoState *cur_stream)
 
             case SDLK_b:
                 cur_stream->brightness += 70;
-                if (cur_stream->brightness > 10000) cur_stream->brightness = 1000;
+                if (cur_stream->brightness > 10000) cur_stream->brightness = 10000;
                 //printf("brightness %d\n", cur_stream->brightness);
 		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
                 break;
