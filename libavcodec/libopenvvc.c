@@ -44,6 +44,7 @@ struct OVDecContext{
      int64_t nb_entry_th;
      int64_t nb_frame_th;
      int64_t brightness;
+     int64_t pprocess;
 };
 
 #define OFFSET(x) offsetof(struct OVDecContext, x)
@@ -72,6 +73,8 @@ static const AVOption options[] = {
         AV_OPT_TYPE_CONST, {.i64 = 5}, 0, 6, PAR , "ll"},
     { "brightness", "Verbosity of OpenVVC decoder", OFFSET(brightness),
         AV_OPT_TYPE_INT, {.i64 = 100}, 100, 10000, PAR },
+    { "nopostproc", "Verbosity of OpenVVC decoder", OFFSET(pprocess),
+        AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, PAR },
     { NULL },
 };
 
@@ -226,6 +229,7 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
 
     //ovdec_set_option(libovvc_dec, OVDEC_BRIGHTNESS, dec_ctx->brightness);
     //av_log(c, AV_LOG_ERROR, "Bright %ld\n", dec_ctx->brightness);
+    ovdec_set_opt(libovvc_dec, "nopostproc", &dec_ctx->pprocess);
 
 
     if (!avpkt->size) {
