@@ -35,6 +35,8 @@
 #include "h2645_parse.h"
 #include "vvc.h"
 
+typedef OVDec OVVCDec;
+
 struct OVDecContext{
      AVClass *c;
      OVDec* libovvc_dec;
