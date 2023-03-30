@@ -227,8 +227,7 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
     int *nb_pic_out = outdata_size;
     int ret;
 
-    //ovdec_set_option(libovvc_dec, OVDEC_BRIGHTNESS, dec_ctx->brightness);
-    //av_log(c, AV_LOG_ERROR, "Bright %ld\n", dec_ctx->brightness);
+    ovdec_set_opt(libovvc_dec, "brightness", &dec_ctx->brightness);
     ovdec_set_opt(libovvc_dec, "nopostproc", &dec_ctx->pprocess);
 
 
