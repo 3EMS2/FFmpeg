@@ -100,21 +100,20 @@ static void release_nalu(struct OVNALUnit **nalu_p)
         av_freep(&ovnalu->epb_pos);
     }
     av_freep(nalu_p);
-    //*nalu_p = NULL;
 }
 
 static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int raw_size, const int *skipped_bytes_pos, int skipped_bytes) {
 
 
-    OVNALUnit *ovnalu;
-    int ret = ovnalu_create(&ovnalu);
-    if (ret < 0) {
+    OVNALUnit *ovnalu = av_mallocz(sizeof(*ovnalu));
+    if (!ovnalu) {
 	av_log(NULL, AV_LOG_ERROR, "Could not init new OVNALUnit\n");
-	return ret;
+	return AVERROR(ENOMEM);
     } else {
 	uint8_t *rbsp_cpy = av_malloc(raw_size + 8);
 	if (rbsp_cpy) {
 
+	    int *epb_cpy = NULL;
 	    memcpy(rbsp_cpy, rbsp_buffer, raw_size);
 	    rbsp_cpy[raw_size]     = 0;
 	    rbsp_cpy[raw_size + 1] = 0;
@@ -127,9 +126,8 @@ static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int 
 
 	    ovnalu->rbsp_data = rbsp_cpy;
 	    ovnalu->rbsp_size = raw_size;
-
 	    if (skipped_bytes) {
-		int *epb_cpy = av_malloc(skipped_bytes * sizeof (*ovnalu->epb_pos));
+		epb_cpy = av_malloc(skipped_bytes * sizeof (*ovnalu->epb_pos));
 		if (epb_cpy) {
 
 		    memcpy(epb_cpy, skipped_bytes_pos, skipped_bytes * sizeof (*ovnalu->epb_pos));
@@ -139,19 +137,19 @@ static int copy_rpbs_info(OVNALUnit **ovnalu_p, const uint8_t *rbsp_buffer, int 
 		} else {
 		    ovnalu_unref(&ovnalu);
 		    av_freep(rbsp_cpy);
-		    ret = AVERROR(ENOMEM);
+                   return AVERROR(ENOMEM);
 		}
 	    }
-            ovnalu->release = release_nalu;
+           ovnalu_init(ovnalu, rbsp_cpy, epb_cpy, raw_size, skipped_bytes, 0,release_nalu);
 	} else {
-            ovnalu_unref(&ovnalu);
-	     ret = AVERROR(ENOMEM);
+            av_free(ovnalu);
+	     return AVERROR(ENOMEM);
 	}
     }
 
     *ovnalu_p = ovnalu;
 
-    return ret;
+    return 0;
 }
 
 static int convert_avpkt(OVPictureUnit **ovpu_p, const H2645Packet *pkt) {
