@@ -67,6 +67,8 @@
 #include <fribidi.h>
 #endif
 
+#include <ovframe.h>
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -139,6 +141,8 @@ enum var_name {
 #endif
     VAR_PKT_SIZE,
     VAR_DURATION,
+    VAR_PEAK_LUMINANCE,
+    VAR_PEAK_LUMINANCE2,
     VAR_VARS_NB
 };
 
@@ -957,6 +961,24 @@ fail:
     return ret;
 }
 
+static int func_peaklum(AVFilterContext *ctx, AVBPrint *bp,
+                          char *fct, unsigned argc, char **argv, int tag)
+{
+    DrawTextContext *s = ctx->priv;
+
+    av_bprintf(bp, "%f", s->var_values[VAR_PEAK_LUMINANCE]);
+    return 0;
+}
+
+static int func_peaklum2(AVFilterContext *ctx, AVBPrint *bp,
+                          char *fct, unsigned argc, char **argv, int tag)
+{
+    DrawTextContext *s = ctx->priv;
+
+    av_bprintf(bp, "%f", s->var_values[VAR_PEAK_LUMINANCE2]);
+    return 0;
+}
+
 static int func_pict_type(AVFilterContext *ctx, AVBPrint *bp,
                           char *fct, unsigned argc, char **argv, int tag)
 {
@@ -1226,6 +1248,8 @@ static const struct drawtext_function {
     { "frame_num", 0, 0, 0,   func_frame_num },
     { "n",         0, 0, 0,   func_frame_num },
     { "metadata",  1, 2, 0,   func_metadata },
+    { "peak_lum",  0, 0, 0,   func_peaklum },
+    { "peak_lum2",  0, 0, 0,   func_peaklum2 },
 };
 
 static int eval_function(AVFilterContext *ctx, AVBPrint *bp, char *fct,
@@ -1666,6 +1690,13 @@ FF_ENABLE_DEPRECATION_WARNINGS
 #endif
     s->var_values[VAR_DURATION] = frame->duration * av_q2d(inlink->time_base);
     s->var_values[VAR_PKT_SIZE] = frame->pkt_size;
+
+    sd = av_frame_get_side_data(frame, AV_FRAME_DATA_OPENVVC);
+    if (sd) {
+            OVFrame *test = (OVFrame *) sd->data;
+	    s->var_values[VAR_PEAK_LUMINANCE] = test->frame_info.peak_luminance;
+	    s->var_values[VAR_PEAK_LUMINANCE2] = test->frame_info.peak_luminance_lim;
+    }
 
     s->metadata = frame->metadata;
 

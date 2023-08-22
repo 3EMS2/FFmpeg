@@ -307,6 +307,7 @@ typedef struct VideoState {
     int brightness;
 } VideoState;
 
+#if 0
 #include "ovdec.h"
 struct OVDecContext{
      AVClass *c;
@@ -317,12 +318,13 @@ struct OVDecContext{
      int64_t nb_entry_th;
      int64_t nb_frame_th;
 };
+#endif
 
 static void
 ovvc_set_brigthness(Decoder *vd, int value) {
 	AVCodec *ovvc =   avcodec_find_decoder_by_name("ovvc");
    if (vd->avctx->codec == ovvc) {
-	   struct OVDecContext *lovdec = vd->avctx->priv_data;
+	   //struct OVDecContext *lovdec = vd->avctx->priv_data;
 
         av_opt_set_int(vd->avctx, "brightness", value, AV_OPT_SEARCH_CHILDREN);
 

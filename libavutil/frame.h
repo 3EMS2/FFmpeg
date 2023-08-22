@@ -209,6 +209,12 @@ enum AVFrameSideDataType {
      * volume transform - CUVA 005.1-2021.
      */
     AV_FRAME_DATA_DYNAMIC_HDR_VIVID,
+
+    /**
+     * OpenVVC specific side data associated to specific video frame. The payload is
+     * an OVFrame type.
+     */
+    AV_FRAME_DATA_OPENVVC,
 };
 
 enum AVActiveFormatDescription {

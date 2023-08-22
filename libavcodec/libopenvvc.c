@@ -37,7 +37,7 @@
 
 struct OVDecContext{
      AVClass *c;
-     OVVCDec* libovvc_dec;
+     OVDec* libovvc_dec;
      int nal_length_size;
      int is_nalff;
      int64_t log_level;
@@ -216,7 +216,7 @@ export_frame_properties(const AVFrame *const avframe, AVCodecContext *c)
 static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdata, int *outdata_size, struct AVPacket *avpkt) {
 
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
-    OVVCDec *libovvc_dec = dec_ctx->libovvc_dec;
+    OVDec *libovvc_dec = dec_ctx->libovvc_dec;
     OVFrame *ovframe = NULL;
     OVPictureUnit *ovpu;
     H2645Packet pkt = {0};
@@ -224,8 +224,8 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
     int *nb_pic_out = outdata_size;
     int ret;
 
-    ovdec_set_option(libovvc_dec, OVDEC_BRIGHTNESS, dec_ctx->brightness);
-    av_log(c, AV_LOG_ERROR, "Bright %ld\n", dec_ctx->brightness);
+    //ovdec_set_option(libovvc_dec, OVDEC_BRIGHTNESS, dec_ctx->brightness);
+    //av_log(c, AV_LOG_ERROR, "Bright %ld\n", dec_ctx->brightness);
 
 
     if (!avpkt->size) {
@@ -236,6 +236,9 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
             av_log(c, AV_LOG_TRACE, "Draining pic with POC: %d\n", ovframe->poc);
 
             convert_ovframe(outdata, ovframe);
+            AVFrameSideData *sd_dst = av_frame_new_side_data(outdata, AV_FRAME_DATA_OPENVVC,
+                                            256);
+        sd_dst->data = ovframe;
 
             export_frame_properties(outdata, c);
 
@@ -282,7 +285,9 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
         convert_ovframe(outdata, ovframe);
 
         export_frame_properties(outdata, c);
-
+            AVFrameSideData *sd_dst = av_frame_new_side_data(outdata, AV_FRAME_DATA_OPENVVC,
+                                            256);
+        sd_dst->data = ovframe;
         *nb_pic_out = 1;
     }
 
@@ -310,7 +315,7 @@ static void libovvc_log(void* ctx, int log_level, const char* fmt, va_list vl)
 
 static av_cold int libovvc_decode_init(AVCodecContext *c) {
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
-    OVVCDec **libovvc_dec_p = (OVVCDec**) &dec_ctx->libovvc_dec;
+    OVDec **libovvc_dec_p = (OVDec**) &dec_ctx->libovvc_dec;
     int ret;
     int nb_frame_th = dec_ctx->nb_frame_th;
     int nb_entry_th = dec_ctx->nb_entry_th;
@@ -364,7 +369,7 @@ static av_cold int libovvc_decode_free(AVCodecContext *c) {
 
 static av_cold void libovvc_decode_flush(AVCodecContext *c) {
     struct OVDecContext *dec_ctx = (struct OVDecContext *)c->priv_data;
-    OVVCDec *libovvc_dec = dec_ctx->libovvc_dec;
+    OVDec *libovvc_dec = dec_ctx->libovvc_dec;
 
     av_log(c, AV_LOG_ERROR, "Flushing.\n");
 

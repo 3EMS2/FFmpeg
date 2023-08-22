@@ -2925,13 +2925,17 @@ static int FUNC(slice_header)(CodedBitstreamContext *ctx, RWContext *rw,
             for (i = 0; i < curr_subpic_idx; i++) {
                 slice_idx += pps->num_slices_in_subpic[i];
             }
-            width_in_tiles =
-                pps->pps_slice_width_in_tiles_minus1[slice_idx] + 1;
+	    if (pps->pps_num_slices_in_pic_minus1 > 1)
+		    width_in_tiles = pps->pps_slice_width_in_tiles_minus1[slice_idx] + 1;
+            else
+		    width_in_tiles = pps->pps_num_exp_tile_columns_minus1 + 1;
 
             if (entropy_sync)
                 height = pps->slice_height_in_ctus[slice_idx];
-            else
+            else if (pps->pps_num_slices_in_pic_minus1 > 1)
                 height = pps->pps_slice_height_in_tiles_minus1[slice_idx] + 1;
+	    else
+                height = pps->pps_num_exp_tile_rows_minus1 + 1;
 
             num_entry_points = width_in_tiles * height;
         } else {
