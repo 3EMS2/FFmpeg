@@ -98,6 +98,8 @@ static const char *const var_names[] = {
 #endif
     "pkt_size",
     "duration",
+    "peak_lum",
+    "peak_lum2",
     NULL
 };
 
