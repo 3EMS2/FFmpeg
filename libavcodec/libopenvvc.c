@@ -47,6 +47,7 @@ struct OVDecContext{
      int64_t nb_frame_th;
      int64_t brightness;
      int64_t pprocess;
+     int64_t br_scale;
 };
 
 #define OFFSET(x) offsetof(struct OVDecContext, x)
@@ -76,6 +77,8 @@ static const AVOption options[] = {
     { "brightness", "Verbosity of OpenVVC decoder", OFFSET(brightness),
         AV_OPT_TYPE_INT, {.i64 = 100}, 100, 10000, PAR },
     { "nopostproc", "Verbosity of OpenVVC decoder", OFFSET(pprocess),
+        AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, PAR },
+    { "nobrscale", "Disable usage of peak luminance limitation", OFFSET(br_scale),
         AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, PAR },
     { NULL },
 };
@@ -227,8 +230,15 @@ static int libovvc_decode_frame(struct AVCodecContext *c, struct AVFrame *outdat
     int *nb_pic_out = outdata_size;
     int ret;
 
-    ovdec_set_opt(libovvc_dec, "brightness", &dec_ctx->brightness);
+    //ovdec_set_opt(libovvc_dec, "brightness", &dec_ctx->brightness);
+    //printf("postproc %d\n",dec_ctx->pprocess);
     ovdec_set_opt(libovvc_dec, "nopostproc", &dec_ctx->pprocess);
+    ovdec_set_opt(libovvc_dec, "nobrscale", &dec_ctx->br_scale);
+    if (dec_ctx->br_scale) {
+	    ovdec_set_opt(libovvc_dec, "brightness", &dec_ctx->brightness);
+	    av_log(NULL, AV_LOG_WARNING, "Setting BRIGHT %d, ", dec_ctx->brightness);
+    }
+
 
 
     if (!avpkt->size) {

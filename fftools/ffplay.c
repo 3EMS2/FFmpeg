@@ -3319,7 +3319,7 @@ static void event_loop(VideoState *cur_stream)
 
             case SDLK_b:
                 cur_stream->brightness += 70;
-                if (cur_stream->brightness > 10000) cur_stream->brightness = 10000;
+                if (cur_stream->brightness > 1000) cur_stream->brightness = 1000;
                 //printf("brightness %d\n", cur_stream->brightness);
 		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
                 break;
@@ -3328,6 +3328,22 @@ static void event_loop(VideoState *cur_stream)
                 if (cur_stream->brightness < 100) cur_stream->brightness = 100;
                 //printf("brightness %d\n", cur_stream->brightness);
 		ovvc_set_brigthness(&cur_stream->viddec, cur_stream->brightness);
+                break;
+
+            case SDLK_d:
+                static int pp = 0;
+		pp++;
+		av_opt_set_int(cur_stream->viddec.avctx, "nopostproc", pp&1, AV_OPT_SEARCH_CHILDREN);
+		av_log(NULL, AV_LOG_WARNING, "Setting nopostproc %d, ", pp);
+                break;
+
+            case SDLK_i:
+                static int nbr = 0;
+                nbr++;
+		//av_opt_set_int(cur_stream->viddec.avctx, "nopostproc", (pp++)&1, AV_OPT_SEARCH_CHILDREN);
+                cur_stream->brightness = 1000;
+		ovvc_set_brigthness(&cur_stream->viddec, 1000);
+		av_opt_set_int(cur_stream->viddec.avctx, "nobrscale", nbr&1, AV_OPT_SEARCH_CHILDREN);
                 break;
 
             case SDLK_f:
